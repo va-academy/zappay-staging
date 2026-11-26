@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7fb">
+  <title>ZapPay — Your money, in focus</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #19231f;
+      --muted: #818a86;
+      --line: #e9ece9;
+      --canvas: #f6f7fb;
+      --green: #1d7655;
+      --green-dark: #15583f;
+      --mint: #e6f4ed;
+      --white: #fff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--canvas); color: var(--ink); }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .app { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      display: flex;
+      flex: 0 0 246px;
+      flex-direction: column;
+      padding: 28px 18px 20px;
+      background: var(--white);
+      border-right: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 12px; font-size: 21px; font-weight: 750; letter-spacing: -1px; }
+    .brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--green); color: white; font-size: 19px; }
+    .nav-label { margin: 39px 12px 12px; color: #a1a8a4; font-size: 10px; font-weight: 700; letter-spacing: 1.25px; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav a { display: flex; align-items: center; gap: 13px; padding: 11px 13px; border-radius: 9px; color: #747d78; font-size: 13px; text-decoration: none; }
+    .nav a:hover, .nav a.active { background: var(--mint); color: var(--green-dark); }
+    .nav a.active { font-weight: 650; }
+    .nav-icon { width: 17px; text-align: center; font-size: 15px; }
+    .sidebar-bottom { margin-top: auto; }
+    .help-card { padding: 15px; border: 1px solid var(--line); border-radius: 12px; }
+    .help-card strong { display: block; margin-bottom: 5px; font-size: 12px; }
+    .help-card p { margin: 0 0 11px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .help-card a { color: var(--green); font-size: 11px; font-weight: 650; text-decoration: none; }
+    .profile { display: flex; align-items: center; gap: 10px; margin-top: 20px; padding: 13px 7px 0; border-top: 1px solid var(--line); }
+    .avatar { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: #e7e8f7; color: #55578b; font-size: 11px; font-weight: 700; }
+    .profile-name { font-size: 11px; font-weight: 650; }
+    .profile-email { margin-top: 3px; color: var(--muted); font-size: 10px; }
+
+    main { width: min(100% - 246px, 1320px); margin: 0 auto; padding: 32px 42px 44px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 34px; }
+    .eyebrow { margin-bottom: 7px; color: var(--muted); font-size: 12px; }
+    h1 { margin: 0; font-size: clamp(22px, 3vw, 29px); letter-spacing: -1.1px; }
+    .top-actions { display: flex; align-items: center; gap: 12px; }
+    .icon-button { display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: white; color: #69736e; font-size: 16px; }
+    .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 41px; padding: 0 16px; border: 0; border-radius: 9px; background: var(--green); color: white; font-size: 12px; font-weight: 650; }
+    .primary-button:hover { background: var(--green-dark); }
+
+    .balance-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(180px, 1fr)); gap: 16px; }
+    .card { padding: 21px; border: 1px solid var(--line); border-radius: 13px; background: var(--white); }
+    .balance-card { position: relative; overflow: hidden; min-height: 170px; padding: 23px 25px; border: 0; background: var(--green); color: white; }
+    .balance-card::after { position: absolute; right: -44px; bottom: -123px; width: 265px; height: 265px; border: 1px solid rgb(255 255 255 / 13%); border-radius: 50%; content: ""; }
+    .balance-card::before { position: absolute; right: -8px; bottom: -151px; width: 265px; height: 265px; border: 1px solid rgb(255 255 255 / 13%); border-radius: 50%; content: ""; }
+    .card-label { color: var(--muted); font-size: 11px; }
+    .balance-card .card-label { color: rgb(255 255 255 / 74%); }
+    .balance-amount { margin: 11px 0 15px; font-size: clamp(27px, 3vw, 35px); font-weight: 650; letter-spacing: -1.2px; }
+    .balance-foot { display: flex; align-items: center; gap: 7px; color: rgb(255 255 255 / 78%); font-size: 10px; }
+    .positive-pill { padding: 4px 7px; border-radius: 20px; background: rgb(255 255 255 / 17%); color: white; font-weight: 650; }
+    .metric-card { display: flex; flex-direction: column; justify-content: space-between; min-height: 170px; }
+    .metric-head { display: flex; align-items: center; justify-content: space-between; }
+    .metric-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 9px; background: #f0f5f2; color: var(--green); font-size: 15px; }
+    .metric-amount { margin-top: 17px; font-size: 25px; font-weight: 650; letter-spacing: -.7px; }
+    .metric-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--muted); font-size: 10px; }
+    .trend { color: var(--green); font-weight: 650; }
+
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(245px, .85fr); gap: 17px; margin-top: 20px; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 21px; }
+    h2 { margin: 0; font-size: 14px; letter-spacing: -.2px; }
+    .subheading { margin-top: 5px; color: var(--muted); font-size: 10px; }
+    .text-button { padding: 0; border: 0; background: transparent; color: var(--green); font-size: 11px; font-weight: 650; text-decoration: none; }
+    .chart-legend { display: flex; align-items: center; gap: 15px; color: var(--muted); font-size: 10px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .legend-dot.expenses { background: #c9d8d0; }
+    .chart { display: block; width: 100%; height: 183px; overflow: visible; }
+    .chart-grid line { stroke: #edf0ed; stroke-dasharray: 3 5; }
+    .chart-labels { display: flex; justify-content: space-between; padding: 4px 5px 0; color: #a0a7a3; font-size: 9px; }
+    .chart-tooltip { fill: var(--ink); font-size: 9px; font-weight: 600; }
+
+    .spending-card { margin-top: 17px; }
+    .category-list { display: grid; gap: 18px; }
+    .category-top { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 10px; }
+    .category-name { display: flex; align-items: center; gap: 8px; }
+    .category-emoji { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 7px; background: #f5f6f5; font-size: 12px; }
+    .category-value { font-weight: 650; }
+    .progress { height: 5px; margin-left: 33px; overflow: hidden; border-radius: 8px; background: #eff1ef; }
+    .progress span { display: block; height: 100%; border-radius: inherit; background: #83b9a1; }
+
+    .transactions-card { margin-top: 20px; padding-bottom: 6px; }
+    .transaction-tools { display: flex; gap: 8px; }
+    .search-input, .filter-select { height: 33px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-size: 10px; }
+    .search-input { width: 156px; }
+    .transaction-table { width: 100%; border-collapse: collapse; text-align: left; }
+    .transaction-table th { padding: 10px 8px; border-bottom: 1px solid var(--line); color: #9aa19d; font-size: 9px; font-weight: 600; }
+    .transaction-table td { padding: 12px 8px; border-bottom: 1px solid #f0f1f0; font-size: 10px; }
+    .transaction-table tr:last-child td { border-bottom: 0; }
+    .merchant { display: flex; align-items: center; gap: 9px; min-width: 135px; }
+    .merchant-icon { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 9px; background: #f2f4f2; font-size: 13px; }
+    .merchant-name { font-weight: 650; }
+    .merchant-type { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .amount { white-space: nowrap; font-weight: 650; }
+    .amount.income { color: var(--green); }
+    .status { display: inline-block; padding: 4px 7px; border-radius: 12px; background: #eaf5ef; color: #397c5e; font-size: 9px; }
+    .empty-state { padding: 25px 8px !important; color: var(--muted); text-align: center; }
+
+    dialog { width: min(430px, calc(100% - 30px)); padding: 0; border: 0; border-radius: 14px; box-shadow: 0 20px 70px rgb(22 38 29 / 20%); }
+    dialog::backdrop { background: rgb(22 31 26 / 40%); }
+    .dialog-content { padding: 23px; }
+    .dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+    .dialog-heading h2 { font-size: 17px; }
+    .close-button { border: 0; background: transparent; color: var(--muted); font-size: 20px; }
+    .form-grid { display: grid; gap: 13px; }
+    .form-field label { display: block; margin-bottom: 6px; color: #5f6a64; font-size: 10px; font-weight: 650; }
+    .form-field input, .form-field select { width: 100%; height: 39px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); font-size: 12px; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 19px; }
+    .secondary-button { min-height: 39px; padding: 0 14px; border: 1px solid var(--line); border-radius: 8px; background: white; color: #66716b; font-size: 11px; }
+    .demo-note { margin: 13px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
+
+    @media (max-width: 1000px) {
+      .sidebar { flex-basis: 210px; }
+      main { width: calc(100% - 210px); padding: 28px 25px; }
+      .balance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .balance-card { grid-column: span 2; }
+    }
+    @media (max-width: 720px) {
+      .sidebar { display: none; }
+      main { width: 100%; padding: 22px 16px 35px; }
+      .topbar { margin-bottom: 23px; }
+      .content-grid { grid-template-columns: 1fr; }
+      .balance-grid { gap: 10px; }
+      .card { padding: 17px; }
+      .balance-card { padding: 20px; }
+      .metric-card { min-height: 145px; }
+      .transactions-card { overflow-x: auto; }
+      .transaction-table { min-width: 580px; }
+      .search-input { width: 115px; }
+    }
+    @media (max-width: 420px) {
+      .top-actions { gap: 7px; }
+      .top-actions .primary-button { padding: 0 10px; font-size: 10px; }
+      .icon-button { width: 36px; height: 36px; }
+      .balance-grid { grid-template-columns: 1fr 1fr; }
+      .metric-amount { font-size: 21px; }
+      .chart-legend { gap: 8px; }
+      .transaction-tools { gap: 5px; }
+      .filter-select { padding: 0 5px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">↗</span>ZapPay</div>
+      <div class="nav-label">Workspace</div>
+      <nav class="nav">
+        <a class="active" href="#overview" aria-current="page"><span class="nav-icon">▦</span>Overview</a>
+        <a href="#transactions"><span class="nav-icon">⇄</span>Transactions</a>
+        <a href="#spending"><span class="nav-icon">◷</span>Budgets</a>
+        <a href="#reports"><span class="nav-icon">▤</span>Reports</a>
+      </nav>
+      <div class="nav-label">Personal</div>
+      <nav class="nav">
+        <a href="#cards"><span class="nav-icon">▣</span>My cards</a>
+        <a href="#settings"><span class="nav-icon">⚙</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="help-card">
+          <strong>Need a hand?</strong>
+          <p>Find answers and tips in our help center.</p>
+          <a href="mailto:hello@zappay.example">Visit help center ↗</a>
+        </div>
+        <div class="profile">
+          <div class="avatar" aria-hidden="true">AJ</div>
+          <div><div class="profile-name">Alex Johnson</div><div class="profile-email">alex@example.com</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main id="overview">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow" id="today-label">Your financial snapshot</div>
+          <h1>Good morning, Alex <span aria-hidden="true">✦</span></h1>
+        </div>
+        <div class="top-actions">
+          <button class="icon-button" type="button" aria-label="Notifications">♧</button>
+          <button class="primary-button" id="open-transaction" type="button"><span aria-hidden="true">＋</span> Add transaction</button>
+        </div>
+      </header>
+
+      <section class="balance-grid" aria-label="Account summary">
+        <article class="card balance-card">
+          <div class="card-label">Total balance</div>
+          <div class="balance-amount" id="balance-total">$0.00</div>
+          <div class="balance-foot"><span class="positive-pill">↗ 4.8%</span> <span>compared to last month</span></div>
+        </article>
+        <article class="card metric-card">
+          <div class="metric-head"><span class="card-label">Income this month</span><span class="metric-icon" aria-hidden="true">↙</span></div>
+          <div><div class="metric-amount" id="income-total">$0.00</div><div class="metric-foot"><span class="trend">↗ 8.2%</span> vs. last month</div></div>
+        </article>
+        <article class="card metric-card">
+          <div class="metric-head"><span class="card-label">Expenses this month</span><span class="metric-icon" aria-hidden="true">↗</span></div>
+          <div><div class="metric-amount" id="expense-total">$0.00</div><div class="metric-foot"><span class="trend">↘ 2.4%</span> vs. last month</div></div>
+        </article>
+      </section>
+
+      <section class="content-grid" aria-label="Financial insights">
+        <div>
+          <article class="card">
+            <div class="section-heading">
+              <div><h2>Cash flow</h2><div class="subheading">Your income and expenses over time</div></div>
+              <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot"></span>Income</span>
+                <span class="legend-item"><span class="legend-dot expenses"></span>Expenses</span>
+                <select class="filter-select" id="chart-period" aria-label="Chart period"><option>Last 7 months</option><option>Last 30 days</option></select>
+              </div>
+            </div>
+            <svg class="chart" viewBox="0 0 600 185" role="img" aria-label="Illustrative cash flow chart showing income above expenses">
+              <g class="chart-grid">
+                <line x1="0" y1="20" x2="600" y2="20"></line><line x1="0" y1="65" x2="600" y2="65"></line>
+                <line x1="0" y1="110" x2="600" y2="110"></line><line x1="0" y1="155" x2="600" y2="155"></line>
+              </g>
+              <path d="M5 126 C45 120 55 95 95 101 S150 123 185 87 S250 92 275 67 S330 86 365 57 S425 74 455 43 S520 63 595 20 L595 155 L5 155Z" fill="#e5f2eb"></path>
+              <path d="M5 126 C45 120 55 95 95 101 S150 123 185 87 S250 92 275 67 S330 86 365 57 S425 74 455 43 S520 63 595 20" fill="none" stroke="#438b6d" stroke-width="3" stroke-linecap="round"></path>
+              <path d="M5 147 C55 140 65 130 95 132 S150 143 185 123 S245 128 275 111 S335 126 365 104 S425 121 455 96 S525 115 595 78 L595 155 L5 155Z" fill="#f1f5f2"></path>
+              <path d="M5 147 C55 140 65 130 95 132 S150 143 185 123 S245 128 275 111 S335 126 365 104 S425 121 455 96 S525 115 595 78" fill="none" stroke="#b8cfc2" stroke-width="2.5" stroke-linecap="round"></path>
+              <circle cx="455" cy="43" r="4" fill="#438b6d" stroke="white" stroke-width="2"></circle>
+            </svg>
+            <div class="chart-labels"><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span></div>
+          </article>
+
+          <article class="card transactions-card" id="transactions">
+            <div class="section-heading">
+              <div><h2>Recent transactions</h2><div class="subheading">Your latest account activity</div></div>
+              <div class="transaction-tools">
+                <input class="search-input" id="transaction-search" type="search" placeholder="Search..." aria-label="Search transactions">
+                <select class="filter-select" id="transaction-filter" aria-label="Filter transactions">
+                  <option value="all">All activity</option><option value="income">Income</option><option value="expense">Expenses</option>
+                </select>
+              </div>
+            </div>
+            <table class="transaction-table">
+              <thead><tr><th scope="col">DESCRIPTION</th><th scope="col">DATE</th><th scope="col">CATEGORY</th><th scope="col">STATUS</th><th scope="col">AMOUNT</th></tr></thead>
+              <tbody id="transaction-rows"></tbody>
+            </table>
+          </article>
+        </div>
+
+        <div>
+          <article class="card">
+            <div class="section-heading">
+              <div><h2>Spending breakdown</h2><div class="subheading">This month by category</div></div>
+              <button class="text-button" type="button">View all</button>
+            </div>
+            <div class="category-list">
+              <div><div class="category-top"><span class="category-name" data-category="Food &amp; dining"><span class="category-emoji">🍽️</span>Food & dining</span><span class="category-value">$0</span></div><div class="progress"><span style="width: 72%"></span></div></div>
+              <div><div class="category-top"><span class="category-name" data-category="Shopping"><span class="category-emoji">🛍️</span>Shopping</span><span class="category-value">$0</span></div><div class="progress"><span style="width: 48%"></span></div></div>
+              <div><div class="category-top"><span class="category-name" data-category="Transport"><span class="category-emoji">🚗</span>Transport</span><span class="category-value">$0</span></div><div class="progress"><span style="width: 35%"></span></div></div>
+              <div><div class="category-top"><span class="category-name" data-category="Housing"><span class="category-emoji">🏠</span>Housing</span><span class="category-value">$0</span></div><div class="progress"><span style="width: 85%"></span></div></div>
+              <div><div class="category-top"><span class="category-name" data-category="Other"><span class="category-emoji">✦</span>Other</span><span class="category-value">$0</span></div><div class="progress"><span style="width: 25%"></span></div></div>
+            </div>
+          </article>
+          <article class="card spending-card" id="spending">
+            <div class="section-heading"><div><h2>Monthly budget</h2><div class="subheading">Your spending limit</div></div><span class="metric-icon" aria-hidden="true">⌁</span></div>
+            <div class="category-top"><span>Used this month</span><span class="category-value" id="budget-label">$0 / $3,500</span></div>
+            <div class="progress"><span id="budget-progress" style="width:0%"></span></div>
+            <div class="metric-foot" style="margin: 10px 0 0"><span id="budget-remaining">Loading budget…</span></div>
+          </article>
+        </div>
+      </section>
+      <p class="demo-note">ZapPay demo: figures are sample data stored only in this browser. No real bank account or payment service is connected.</p>
+    </main>
+  </div>
+
+  <dialog id="transaction-dialog" aria-labelledby="dialog-title">
+    <form class="dialog-content" id="transaction-form">
+      <div class="dialog-heading">
+        <div><h2 id="dialog-title">Add a transaction</h2><div class="subheading">Record income or an expense.</div></div>
+        <button class="close-button" id="close-dialog" type="button" aria-label="Close dialog">×</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-field"><label for="description">Description</label><input id="description" name="description" maxlength="60" placeholder="e.g. Grocery shopping" required></div>
+        <div class="form-field"><label for="amount">Amount</label><input id="amount" name="amount" type="number" min="0.01" max="10000000" step="0.01" placeholder="0.00" required></div>
+        <div class="form-field"><label for="type">Type</label><select id="type" name="type"><option value="expense">Expense</option><option value="income">Income</option></select></div>
+        <div class="form-field"><label for="category">Category</label><select id="category" name="category"><option>Food & dining</option><option>Shopping</option><option>Transport</option><option>Housing</option><option>Salary</option><option>Other</option></select></div>
+        <div class="form-field"><label for="date">Date</label><input id="date" name="date" type="date" required></div>
+      </div>
+      <div class="dialog-actions"><button class="secondary-button" id="cancel-dialog" type="button">Cancel</button><button class="primary-button" type="submit">Save transaction</button></div>
+      <p class="demo-note">This sample saves records in your browser only. Do not enter sensitive financial information.</p>
+    </form>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "zappay.transactions.v1";
+    const OPENING_BALANCE = 22842.80;
+    const BUDGET_LIMIT = 3500;
+    const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+    const today = new Date();
+    const dateString = (date) => {
+      const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+      return localDate.toISOString().slice(0, 10);
+    };
+    const daysAgo = (days) => {
+      const date = new Date();
+      date.setDate(date.getDate() - days);
+      return dateString(date);
+    };
+    const seedTransactions = [
+      { id: "seed-1", description: "Monthly salary", category: "Salary", type: "income", amount: 5200, date: daysAgo(1), status: "Completed" },
+      { id: "seed-2", description: "Whole Foods Market", category: "Food & dining", type: "expense", amount: 86.42, date: daysAgo(2), status: "Completed" },
+      { id: "seed-3", description: "Monthly rent", category: "Housing", type: "expense", amount: 1450, date: daysAgo(3), status: "Completed" },
+      { id: "seed-4", description: "Uber ride", category: "Transport", type: "expense", amount: 24.50, date: daysAgo(4), status: "Completed" },
+      { id: "seed-5", description: "Freelance project", category: "Other", type: "income", amount: 850, date: daysAgo(6), status: "Completed" },
+      { id: "seed-6", description: "New headphones", category: "Shopping", type: "expense", amount: 129.99, date: daysAgo(8), status: "Completed" }
+    ];
+    const readTransactions = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === null) return seedTransactions;
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) throw new Error("Saved transactions are not a list.");
+        return parsed.filter((item) =>
+          item && typeof item.id === "string" && typeof item.description === "string" &&
+          typeof item.category === "string" && ["income", "expense"].includes(item.type) &&
+          Number.isFinite(item.amount) && item.amount > 0 && typeof item.date === "string"
+        );
+      } catch (error) {
+        console.error("Could not load ZapPay demo transactions.", error);
+        return seedTransactions;
+      }
+    };
+    let transactions = readTransactions();
+
+    const money = (amount) => currency.format(amount);
+    const thisMonth = (transaction) => {
+      const date = new Date(`${transaction.date}T00:00:00`);
+      return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+    };
+    const iconFor = (category) => ({
+      "Food & dining": "🍽️", Shopping: "🛍️", Transport: "🚗",
+      Housing: "🏠", Salary: "↙", Other: "✦"
+    }[category] || "↔");
+
+    function render() {
+      const monthly = transactions.filter(thisMonth);
+      const income = monthly.filter((item) => item.type === "income").reduce((sum, item) => sum + item.amount, 0);
+      const expenses = monthly.filter((item) => item.type === "expense").reduce((sum, item) => sum + item.amount, 0);
+      const balance = OPENING_BALANCE + transactions.reduce((sum, item) => sum + (item.type === "income" ? item.amount : -item.amount), 0);
+      document.querySelector("#balance-total").textContent = money(balance);
+      document.querySelector("#income-total").textContent = money(income);
+      document.querySelector("#expense-total").textContent = money(expenses);
+
+      document.querySelectorAll(".category-list > div").forEach((row) => {
+        const label = row.querySelector(".category-name").dataset.category;
+        const spent = monthly.filter((item) => item.type === "expense" && item.category === label)
+          .reduce((sum, item) => sum + item.amount, 0);
+        row.querySelector(".category-value").textContent = money(spent);
+        row.querySelector(".progress span").style.width = `${Math.min(spent / BUDGET_LIMIT * 100, 100)}%`;
+      });
+      document.querySelector("#budget-label").textContent = `${money(expenses)} / ${money(BUDGET_LIMIT)}`;
+      document.querySelector("#budget-progress").style.width = `${Math.min(expenses / BUDGET_LIMIT * 100, 100)}%`;
+      document.querySelector("#budget-remaining").textContent = expenses > BUDGET_LIMIT
+        ? `${money(expenses - BUDGET_LIMIT)} over your monthly budget`
+        : `${money(BUDGET_LIMIT - expenses)} left in your monthly budget`;
+      renderTransactions();
+    }
+
+    function renderTransactions() {
+      const query = document.querySelector("#transaction-search").value.trim().toLowerCase();
+      const filter = document.querySelector("#transaction-filter").value;
+      const visible = transactions
+        .filter((item) => filter === "all" || item.type === filter)
+        .filter((item) => `${item.description} ${item.category}`.toLowerCase().includes(query))
+        .sort((a, b) => b.date.localeCompare(a.date));
+      const rows = document.querySelector("#transaction-rows");
+      rows.replaceChildren();
+      if (visible.length === 0) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = 5;
+        cell.className = "empty-state";
+        cell.textContent = "No transactions found.";
+        row.append(cell);
+        rows.append(row);
+        return;
+      }
+      visible.slice(0, 8).forEach((item) => {
+        const row = document.createElement("tr");
+        const description = document.createElement("td");
+        const merchant = document.createElement("div");
+        merchant.className = "merchant";
+        const icon = document.createElement("span");
+        icon.className = "merchant-icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = iconFor(item.category);
+        const name = document.createElement("div");
+        const merchantName = document.createElement("div");
+        merchantName.className = "merchant-name";
+        merchantName.textContent = item.description;
+        const merchantType = document.createElement("div");
+        merchantType.className = "merchant-type";
+        merchantType.textContent = item.type === "income" ? "Money in" : "Money out";
+        name.append(merchantName, merchantType);
+        merchant.append(icon, name);
+        description.append(merchant);
+        const date = document.createElement("td");
+        date.textContent = new Date(`${item.date}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        const category = document.createElement("td");
+        category.textContent = item.category;
+        const statusCell = document.createElement("td");
+        const status = document.createElement("span");
+        status.className = "status";
+        status.textContent = item.status || "Completed";
+        statusCell.append(status);
+        const amount = document.createElement("td");
+        amount.className = `amount ${item.type}`;
+        amount.textContent = `${item.type === "income" ? "+" : "−"}${money(item.amount)}`;
+        row.append(description, date, category, statusCell, amount);
+        rows.append(row);
+      });
+    }
+
+    const dialog = document.querySelector("#transaction-dialog");
+    const form = document.querySelector("#transaction-form");
+    document.querySelector("#today-label").textContent = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    document.querySelector("#date").value = dateString(today);
+    document.querySelector("#open-transaction").addEventListener("click", () => dialog.showModal());
+    document.querySelector("#close-dialog").addEventListener("click", () => dialog.close());
+    document.querySelector("#cancel-dialog").addEventListener("click", () => dialog.close());
+    document.querySelector("#transaction-search").addEventListener("input", renderTransactions);
+    document.querySelector("#transaction-filter").addEventListener("change", renderTransactions);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      const data = new FormData(form);
+      const transaction = {
+        id: crypto.randomUUID(),
+        description: String(data.get("description")).trim(),
+        amount: Number(data.get("amount")),
+        type: String(data.get("type")),
+        category: String(data.get("category")),
+        date: String(data.get("date")),
+        status: "Completed"
+      };
+      if (!transaction.description || !Number.isFinite(transaction.amount) || transaction.amount <= 0 ||
+          !["income", "expense"].includes(transaction.type) || !/^\d{4}-\d{2}-\d{2}$/.test(transaction.date)) {
+        return;
+      }
+      const updated = [transaction, ...transactions];
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (error) {
+        console.error("Could not save ZapPay demo transaction.", error);
+        window.alert("This browser could not save the transaction. Check browser storage settings and try again.");
+        return;
+      }
+      transactions = updated;
+      form.reset();
+      document.querySelector("#date").value = dateString(new Date());
+      dialog.close();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
+
+
+# this is a test change
